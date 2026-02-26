@@ -4,10 +4,28 @@ Welcome to the **Academic Writing Assistant (AWA)** demo repository. This projec
 
 ## 🚀 Live Demo
 
-You can easily access and play around with the active demo hosted on GitHub Pages:
+Access and play around with the live demo:
 **[View Live Demo](https://grayjiaaoli.github.io/awa/)**
 
-The application features multiple iterations (or versions) of the writing assistant UI, allowing users to explore different functionalities and design approaches directly from the main landing page.
+The application features four versions of the academic writing assistant UI, allowing users to explore different functionalities and designs.
+
+From the first version to the fourth, the AI assistant's presence gradually diminished while the immersive writing experience progressively deepened.
+
+### Version 1
+The writing area is positioned alongside the AI assistant, enabling users to easily access the AI assistant.
+
+### Version 2
+The AI assistant is hidden in the lower right corner by default, allowing users to enjoy a relatively immersive writing experience.
+When users click on it, it expands into a small window that allows for further interaction.
+
+### Version 3
+Similar in intent to Version 2, but employing a design with an input field positioned below the screen. 
+This approach provides appropriate guidance or encouragement for users interacting with the AI assistant.
+
+### Version 4
+This version requires users to **double-tap the Spacebar** to evoke the AI assistant.
+This design hides the AI assistant entirely, delivering an immersive writing experience.
+
 
 ---
 
