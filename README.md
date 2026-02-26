@@ -1,42 +1,54 @@
-# sv
+# Academic Writing Assistant (AWA)
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Welcome to the **Academic Writing Assistant (AWA)** demo repository. This project showcases a SvelteKit-based web application designed to assist users with their academic writing processes.
 
-## Creating a project
+## 🚀 Live Demo
 
-If you're seeing this, you've probably already done this step. Congrats!
+You can easily access and play around with the active demo hosted on GitHub Pages:
+**[View Live Demo](https://grayjiaaoli.github.io/awa/)**
 
+The application features multiple iterations (or versions) of the writing assistant UI, allowing users to explore different functionalities and design approaches directly from the main landing page.
+
+---
+
+## 💻 Development Instructions
+
+This project is built using [SvelteKit](https://kit.svelte.dev/). Follow these steps to run the application locally for development or testing:
+
+### Prerequisites
+Make sure you have [Node.js](https://nodejs.org/) (version 18+ recommended) and `npm` installed on your machine.
+
+### 1. Installation
+
+Clone the repository and install the dependencies:
 ```sh
-# create a new project
-npx sv create my-app
+git clone https://github.com/grayJiaaoLi/awa.git
+cd awa
+npm install
 ```
 
-To recreate this project with the same configuration:
+### 2. Running Locally
 
-```sh
-# recreate this project
-npx sv create --template minimal --types jsdoc --no-install academic-writing-assistant
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
+Start the local development server:
 ```sh
 npm run dev
 
-# or start the server and open the app in a new browser tab
+# Or start the server and automatically open the app in your default browser:
 npm run dev -- --open
 ```
+The app will typically be available at `http://localhost:5173`.
 
-## Building
+### 3. Building for Production
 
-To create a production version of your app:
-
+To create a production-ready static build of the application:
 ```sh
 npm run build
 ```
+The static files will be generated in the `build/` directory. You can preview this production build locally before deployment using:
+```sh
+npm run preview
+```
 
-You can preview the production build with `npm run preview`.
+### 4. Deployment
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+This repository uses `@sveltejs/adapter-static` and is configured to automatically deploy to GitHub Pages anytime changes are pushed to the `main` branch. This is handled by the GitHub Actions workflow located in `.github/workflows/deploy.yml`.
