@@ -31,41 +31,60 @@ This design hides the AI assistant entirely, delivering an immersive writing exp
 
 ## 💻 Development Instructions
 
-This project is built using [SvelteKit](https://kit.svelte.dev/). Follow these steps to run the application locally for development or testing:
+This project is structured as a full-stack application with a **SvelteKit** frontend and a **FastAPI (Python)** backend. Follow these steps to set up and run the application locally.
 
 ### Prerequisites
-Make sure you have [Node.js](https://nodejs.org/) (version 18+ recommended) and `npm` installed on your machine.
+- [Node.js](https://nodejs.org/) (version 18+ recommended) and `npm` installed.
+- [Python](https://www.python.org/) 3.9+ installed.
+- A DeepSeek API key (or another OpenAI-compatible API key) for the backend.
 
 ### 1. Installation
 
-Clone the repository and install the dependencies:
+Clone the repository:
 ```sh
 git clone https://github.com/grayJiaaoLi/awa.git
 cd awa
+```
+
+**Frontend Setup:**
+Install the SvelteKit dependencies:
+```sh
 npm install
 ```
 
-### 2. Running Locally
-
-Start the local development server:
+**Backend Setup:**
+Navigate to the backend directory, create a virtual environment, and install the necessary Python packages:
 ```sh
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
+pip install -r requirements.txt
+```
+Next, create a `.env` file inside the `backend/` directory and add your DeepSeek API key:
+```env
+DEEPSEEK_API_KEY=your_actual_api_key_here
+```
+
+### 2. Running Locally for Development
+
+You will need to run the frontend and backend in two separate terminal windows.
+
+**Start the FastAPI Backend:**
+```sh
+# Ensure you are in the awa/backend directory with the venv activated
+uvicorn main:app --reload
+```
+The backend API will be available at `http://127.0.0.1:8000`.
+
+**Start the SvelteKit Frontend:**
+```sh
+# Ensure you are in the main awa/ directory
 npm run dev
 
 # Or start the server and automatically open the app in your default browser:
 npm run dev -- --open
 ```
-The app will typically be available at `http://localhost:5173`.
-
-### 3. Building for Production
-
-To create a production-ready static build of the application:
-```sh
-npm run build
-```
-The static files will be generated in the `build/` directory. You can preview this production build locally before deployment using:
-```sh
-npm run preview
-```
+The app will be available at `http://localhost:5173`.
 
 ### 4. Deployment
 
