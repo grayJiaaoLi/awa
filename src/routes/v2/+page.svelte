@@ -3,12 +3,76 @@
     const version = versions.find((v) => v.id === "v2");
 
     // State for the AI assistant panel
-    // Using simple state without runes for broader compatibility if needed,
-    // but since this is Svelte 5, $state() is idiomatic.
     let isExpanded = $state(false);
 
     function toggleAssistant() {
         isExpanded = !isExpanded;
+    }
+
+    // Chat state
+    let messages = $state([
+        {
+            role: "assistant",
+            content: "I'm here to help. Click the button to collapse me.",
+        },
+    ]);
+    let inputValue = $state("");
+    let isLoading = $state(false);
+    let chatHistoryContainer = $state(null);
+
+    // Auto-scroll chat history when messages change
+    $effect(() => {
+        if (messages.length && chatHistoryContainer) {
+            chatHistoryContainer.scrollTop = chatHistoryContainer.scrollHeight;
+        }
+    });
+
+    async function sendMessage() {
+        const text = inputValue.trim();
+        if (!text || isLoading) return;
+
+        // Add user message to history
+        messages = [...messages, { role: "user", content: text }];
+        inputValue = "";
+        isLoading = true;
+
+        try {
+            const response = await fetch("http://localhost:8000/api/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    messages: messages.map((m) => ({
+                        role: m.role,
+                        content: m.content,
+                    })),
+                    provider: "deepseek",
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            messages = [
+                ...messages,
+                { role: "assistant", content: data.response },
+            ];
+        } catch (error) {
+            console.error("Failed to get AI response:", error);
+            messages = [
+                ...messages,
+                {
+                    role: "assistant",
+                    content:
+                        "Sorry, I encountered an error. Is the backend running?",
+                },
+            ];
+        } finally {
+            isLoading = false;
+        }
     }
 </script>
 
@@ -48,17 +112,47 @@
                     >
                 </div>
 
-                <div class="chat-output">
-                    <div class="message system">
-                        <p>
-                            I'm here to help. Click the button to collapse me.
-                        </p>
-                    </div>
+                <div class="chat-output" bind:this={chatHistoryContainer}>
+                    {#each messages as msg}
+                        <div class="message-wrapper {msg.role}">
+                            <div
+                                class="message {msg.role === 'assistant'
+                                    ? 'system'
+                                    : 'user'}"
+                            >
+                                <p>{msg.content}</p>
+                            </div>
+                        </div>
+                    {/each}
+                    {#if isLoading}
+                        <div class="message-wrapper assistant">
+                            <div class="message system typing">
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                            </div>
+                        </div>
+                    {/if}
                 </div>
 
                 <div class="chat-input-area">
-                    <input type="text" placeholder="Ask for suggestions..." />
-                    <button class="send-btn" aria-label="Send message">
+                    <input
+                        type="text"
+                        placeholder="Ask for suggestions..."
+                        bind:value={inputValue}
+                        onkeydown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                sendMessage();
+                            }
+                        }}
+                    />
+                    <button
+                        class="send-btn"
+                        aria-label="Send message"
+                        onclick={sendMessage}
+                        disabled={isLoading}
+                    >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 24 24"
@@ -67,7 +161,8 @@
                             height="16"
                         >
                             <path
-                                d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
+                                d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"
+                                transform="rotate(-90 12 12)"
                             ></path>
                         </svg>
                     </button>
@@ -235,18 +330,78 @@
         gap: 0.75rem;
     }
 
+    .message-wrapper {
+        display: flex;
+        width: 100%;
+    }
+
+    .message-wrapper.user {
+        justify-content: flex-end;
+    }
+
+    .message-wrapper.assistant {
+        justify-content: flex-start;
+    }
+
     .message {
         padding: 0.75rem;
         border-radius: 0.5rem;
         font-size: 0.875rem;
         line-height: 1.4;
         max-width: 85%;
+        word-wrap: break-word;
+    }
+
+    .message p {
+        margin: 0;
+        white-space: pre-wrap;
     }
 
     .message.system {
         align-self: flex-start;
         background-color: #eff6ff;
         color: #1e40af;
+        border-bottom-left-radius: 0.125rem;
+    }
+
+    .message.user {
+        background-color: #3b82f6;
+        color: white;
+        border-bottom-right-radius: 0.125rem;
+    }
+
+    .message.typing {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        height: 24px;
+        padding: 0.5rem 1rem;
+    }
+
+    .typing .dot {
+        width: 6px;
+        height: 6px;
+        background-color: #3b82f6;
+        border-radius: 50%;
+        animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    .typing .dot:nth-child(1) {
+        animation-delay: -0.32s;
+    }
+    .typing .dot:nth-child(2) {
+        animation-delay: -0.16s;
+    }
+
+    @keyframes bounce {
+        0%,
+        80%,
+        100% {
+            transform: scale(0);
+        }
+        40% {
+            transform: scale(1);
+        }
     }
 
     .chat-input-area {
@@ -283,7 +438,12 @@
         transition: background-color 0.15s;
     }
 
-    .send-btn:hover {
+    .send-btn:hover:not(:disabled) {
         background-color: #2563eb;
+    }
+
+    .send-btn:disabled {
+        background-color: #9ca3af;
+        cursor: not-allowed;
     }
 </style>

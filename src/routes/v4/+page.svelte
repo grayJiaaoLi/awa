@@ -5,10 +5,91 @@
     const version = versions.find((v) => v.id === "v4");
 
     // Each line is an object with unique ID and content
-    let lines = $state([{ id: crypto.randomUUID(), text: "", showAi: false }]);
+    let lines = $state([
+        { id: crypto.randomUUID(), text: "", showAi: false, isLoading: false },
+    ]);
 
     // Active line index for highlighting
     let activeLineIndex = $state(0);
+
+    // AI chat history context for v4 (keeps all lines up to the query line to provide context)
+    async function askAi(query, index) {
+        if (!query.trim()) {
+            closeAi(index);
+            return;
+        }
+
+        // Close the AI input first
+        lines[index].showAi = false;
+
+        // Add a temporary loading line right after the current index
+        const loadingId = crypto.randomUUID();
+        const loadingLine = {
+            id: loadingId,
+            text: "",
+            showAi: false,
+            isLoading: true,
+        };
+        lines.splice(index + 1, 0, loadingLine);
+
+        // Build context from all preceding lines up to this index
+        const priorText = lines
+            .slice(0, index + 1)
+            .map((l) => l.text)
+            .join("\n");
+
+        // Setup message array
+        const messages = [
+            {
+                role: "system",
+                content:
+                    "You are an AI academic writing assistant editing a user's text inline. Given the user's context and query, return ONLY the completion text meant to be inserted immediately after.",
+            },
+            {
+                role: "user",
+                content: `Context up to this point:\n${priorText}\n\nQuery: ${query}`,
+            },
+        ];
+
+        try {
+            const response = await fetch("http://localhost:8000/api/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    messages,
+                    provider: "deepseek",
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Find our loading line index (might have shifted if user typed above)
+            const loadingIndex = lines.findIndex((l) => l.id === loadingId);
+            if (loadingIndex !== -1) {
+                // Update with actual text and remove loading state
+                lines[loadingIndex].text = data.response;
+                lines[loadingIndex].isLoading = false;
+
+                // Focus it
+                activeLineIndex = loadingIndex;
+                setTimeout(() => focusLine(activeLineIndex, true), 0);
+            }
+        } catch (error) {
+            console.error("Failed to get AI response:", error);
+            const loadingIndex = lines.findIndex((l) => l.id === loadingId);
+            if (loadingIndex !== -1) {
+                lines[loadingIndex].text =
+                    "[AI Error: Unable to fetch response]";
+                lines[loadingIndex].isLoading = false;
+            }
+        }
+    }
 
     /** @param {number} index */
     function setActive(index) {
@@ -23,6 +104,7 @@
                 id: crypto.randomUUID(),
                 text: "",
                 showAi: false,
+                isLoading: false,
             };
             lines.splice(index + 1, 0, newLine);
             activeLineIndex = index + 1;
@@ -126,34 +208,56 @@
                 </div>
 
                 <div class="line-content">
-                    <input
-                        id="line-{i}"
-                        type="text"
-                        class="line-input"
-                        value={line.text}
-                        oninput={(e) => handleInput(e, i)}
-                        onkeydown={(e) => handleKeydown(e, i)}
-                        onfocus={() => setActive(i)}
-                        placeholder={(line.text === "" &&
-                            i === lines.length - 1) ||
-                        (line.text === "" && i === activeLineIndex)
-                            ? "Press Space Twice for AI"
-                            : ""}
-                        autocomplete="off"
-                    />
+                    {#if line.isLoading}
+                        <div class="line-loading">
+                            <div class="typing-indicator">
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                            </div>
+                        </div>
+                    {:else}
+                        <input
+                            id="line-{i}"
+                            type="text"
+                            class="line-input"
+                            value={line.text}
+                            oninput={(e) => handleInput(e, i)}
+                            onkeydown={(e) => handleKeydown(e, i)}
+                            onfocus={() => setActive(i)}
+                            placeholder={(line.text === "" &&
+                                i === lines.length - 1) ||
+                            (line.text === "" && i === activeLineIndex)
+                                ? "Press Space Twice for AI"
+                                : ""}
+                            autocomplete="off"
+                        />
+                    {/if}
 
                     {#if line.showAi}
                         <div class="ai-composer-wrapper">
                             <div class="ai-composer">
                                 <input
+                                    id="composer-{i}"
                                     type="text"
                                     placeholder="Ask AI to continue writing..."
-                                    onkeydown={(e) =>
-                                        e.key === "Escape" && closeAi(i)}
+                                    onkeydown={(e) => {
+                                        if (e.key === "Escape") closeAi(i);
+                                        else if (e.key === "Enter") {
+                                            // @ts-ignore
+                                            askAi(e.target.value, i);
+                                        }
+                                    }}
                                 />
                                 <button
                                     class="send-btn"
-                                    onclick={() => closeAi(i)}
+                                    onclick={() => {
+                                        const input = document.getElementById(
+                                            `composer-${i}`,
+                                        );
+                                        // @ts-ignore
+                                        if (input) askAi(input.value, i);
+                                    }}
                                 >
                                     <span class="arrow">↑</span>
                                 </button>
@@ -226,6 +330,45 @@
         display: flex;
         flex-direction: column;
         position: relative; /* Anchor for absolute composer */
+    }
+
+    .line-loading {
+        padding: 0.25rem 0;
+        height: 1.125rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .typing-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .typing-indicator .dot {
+        width: 6px;
+        height: 6px;
+        background-color: #3b82f6;
+        border-radius: 50%;
+        animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    .typing-indicator .dot:nth-child(1) {
+        animation-delay: -0.32s;
+    }
+    .typing-indicator .dot:nth-child(2) {
+        animation-delay: -0.16s;
+    }
+
+    @keyframes bounce {
+        0%,
+        80%,
+        100% {
+            transform: scale(0);
+        }
+        40% {
+            transform: scale(1);
+        }
     }
 
     .line-input {
