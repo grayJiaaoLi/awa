@@ -1,0 +1,8 @@
+Assume a university tries to make their teaching more efficient.
+In particular, they would like to speed up the grading of exercise sheets.
+To do so, they buy a license for ChatGPT and let the system grade student exercises based on the following prompt: "Consider the following exercise: [task description] with the following correct solution: [correct solution].
+A student gave the following answer: [student answer]. How many points out of [max number of points] should the student get? Answer with a single number." 
+Here, text in brackets refers to placeholders/variables to be filled in depending on the specific task and student answer. 
+The output of ChatGPT for this prompt is used as the student’s grade for this exercise.
+
+Do you agree with it? Answer 'Yes' or 'No' and provide three reasons for your opinion, with each reason being stated in one sentence.

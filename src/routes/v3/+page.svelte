@@ -1,16 +1,20 @@
 <script>
     import { versions } from "$lib/config.js";
+    import WritingAssignment from "$lib/components/WritingAssignment.svelte";
     const version = versions.find((v) => v.id === "v3");
 
     // State for the inline assistant
     let isExpanded = $state(false);
     let assistantContainer;
-    
+
     // Chat state
     let messages = $state([
-        { role: 'assistant', content: 'Assistant ready. Type below to ask for help.' }
+        {
+            role: "assistant",
+            content: "Assistant ready. Type below to ask for help.",
+        },
     ]);
-    let inputValue = $state('');
+    let inputValue = $state("");
     let isLoading = $state(false);
     let chatHistoryContainer = $state(null);
 
@@ -34,22 +38,25 @@
         if (!text || isLoading) return;
 
         // Add user message to history
-        messages = [...messages, { role: 'user', content: text }];
-        inputValue = '';
+        messages = [...messages, { role: "user", content: text }];
+        inputValue = "";
         isLoading = true;
         expand();
 
         try {
             // Send exactly the format the backend expects
-            const response = await fetch('http://localhost:8000/api/chat', {
-                method: 'POST',
+            const response = await fetch("http://localhost:8000/api/chat", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json'
+                    "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    messages: messages.map(m => ({ role: m.role, content: m.content })),
-                    provider: 'deepseek'
-                })
+                    messages: messages.map((m) => ({
+                        role: m.role,
+                        content: m.content,
+                    })),
+                    provider: "deepseek",
+                }),
             });
 
             if (!response.ok) {
@@ -57,10 +64,20 @@
             }
 
             const data = await response.json();
-            messages = [...messages, { role: 'assistant', content: data.response }];
+            messages = [
+                ...messages,
+                { role: "assistant", content: data.response },
+            ];
         } catch (error) {
-            console.error('Failed to get AI response:', error);
-            messages = [...messages, { role: 'assistant', content: 'Sorry, I encountered an error. Is the backend running?' }];
+            console.error("Failed to get AI response:", error);
+            messages = [
+                ...messages,
+                {
+                    role: "assistant",
+                    content:
+                        "Sorry, I encountered an error. Is the backend running?",
+                },
+            ];
         } finally {
             isLoading = false;
         }
@@ -95,6 +112,7 @@
 <div class="workspace-v3">
     <!-- Writing Area (Top) -->
     <div class="writing-area">
+        <WritingAssignment />
         <textarea
             placeholder="Start writing your academic paper here..."
             spellcheck="false"
@@ -145,13 +163,21 @@
                 bind:value={inputValue}
                 onfocus={expand}
                 onkeydown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                         e.stopPropagation();
                         sendMessage();
                     }
                 }}
             />
-            <button class="send-btn" aria-label="Send" onclick={(e) => { e.stopPropagation(); sendMessage(); }} disabled={isLoading}>
+            <button
+                class="send-btn"
+                aria-label="Send"
+                onclick={(e) => {
+                    e.stopPropagation();
+                    sendMessage();
+                }}
+                disabled={isLoading}
+            >
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
@@ -303,12 +329,22 @@
         animation: bounce 1.4s infinite ease-in-out both;
     }
 
-    .typing .dot:nth-child(1) { animation-delay: -0.32s; }
-    .typing .dot:nth-child(2) { animation-delay: -0.16s; }
+    .typing .dot:nth-child(1) {
+        animation-delay: -0.32s;
+    }
+    .typing .dot:nth-child(2) {
+        animation-delay: -0.16s;
+    }
 
     @keyframes bounce {
-        0%, 80%, 100% { transform: scale(0); }
-        40% { transform: scale(1); }
+        0%,
+        80%,
+        100% {
+            transform: scale(0);
+        }
+        40% {
+            transform: scale(1);
+        }
     }
 
     .input-row {

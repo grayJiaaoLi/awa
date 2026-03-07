@@ -1,5 +1,12 @@
 # Development Objectives
 
+## 0. (Ground Rules)
+
+* This project is for the demo purpose only.
+* When developing, we should implement without over-engineering, and do NOT introduce too much unnecessary complexities in the code.
+* The code should be clean, modular, reusable, extendable and efficient.
+* The changes and new features should be well-documented, well-tested, and well-maintained.
+
 ## 1. (DONE) A running demo page for academic writing with AI-powered assistant.
 
 * Four different versions of the AI assistant UI, allowing users to explore different functionalities and designs.
@@ -27,3 +34,17 @@
 - **State Management**: Each version manages its chat history bounds natively using Svelte 5 runes (`$state` and `$effect`). When updating UI component structures, ensure `chatHistoryContainer.scrollTop` logic persists to maintain auto-scrolling capabilities.
 - **Provider Architecture**: The backend uses a plug-and-play factory (`get_ai_provider`). Currently, only `DeepSeekProvider` is mapped. When adding a new provider (e.g., Anthropic, OpenAI), extend `AIProvider`, add it into the `get_ai_provider` routing, and verify it uses standard Pydantic models for interactions.
 - **CORS Behavior**: A dedicated `@app.options("/api/chat")` override is in place to bypass strict FastAPI preflight restrictions during local Svelte development. If taking this to production, `allow_origins` mapped in `main.py` should be clamped down strictly to the production frontend URL.
+
+## 4. (DONE) Use the Third Version as the base to develop a UI component for writing assignment display
+
+- **Implement a re-useable UI component for writing assignment display**
+    - The testing writing task is provided in a text file `writing_assignment.txt`.
+    - This component will be shown on the top of the writing canvas field with the same width of writing filed.
+    - Inside this component, at the bottom middle position, there should be a responsive button to allow user to expand and collapse it.
+    - The UI component should display the writing task in a user-friendly format.
+    - The UI component should be re-useable and will be later implemented for across all versions.
+
+### Developer & Maintenance Notes
+- **Extracted Text Module**: The assignment text is decoupled into `src/lib/assignmentText.js` as a raw string export. When the text needs to change or if it eventually pulls from a database, update or replace this module. Avoid embedding large raw text directly in Svelte components.
+- **Component Layout & State**: The `WritingAssignment.svelte` component manages its own `isExpanded` state using Svelte 5 runes (`$state`). It enforces max-height constraints and uses CSS transitions for smooth expanding/collapsing. It is styled with `position: relative` to maintain the text fog gradients cleanly.
+- **Component Reusability**: The component is fully isolated within `src/lib/components/`. It can be plugged across `/v1`, `/v2`, and `/v4` implementations simply by dropping `<WritingAssignment />` above their respective text areas inside their layouts.
