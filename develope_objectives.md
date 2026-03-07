@@ -14,3 +14,4 @@
     2. The AI component shuold be modularized to support different AI models (e.g., DeepSeek, OpenAI, etc. but currently only DeepSeek is supported).
 3. Update the Chatbox UI to be more interactive and user-friendly:
     1. Display the responses from DeepSeek API.
+    2. Make the Chatbox UI more interactive and user-friendly.

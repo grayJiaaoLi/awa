@@ -5,6 +5,14 @@
     // State for the inline assistant
     let isExpanded = $state(false);
     let assistantContainer;
+    
+    // Chat state
+    let messages = $state([
+        { role: 'assistant', content: 'Assistant ready. Type below to ask for help.' }
+    ]);
+    let inputValue = $state('');
+    let isLoading = $state(false);
+    let chatHistoryContainer = $state(null);
 
     function expand() {
         isExpanded = true;
@@ -12,6 +20,50 @@
 
     function collapse() {
         isExpanded = false;
+    }
+
+    // Auto-scroll chat history when messages change
+    $effect(() => {
+        if (messages.length && chatHistoryContainer) {
+            chatHistoryContainer.scrollTop = chatHistoryContainer.scrollHeight;
+        }
+    });
+
+    async function sendMessage() {
+        const text = inputValue.trim();
+        if (!text || isLoading) return;
+
+        // Add user message to history
+        messages = [...messages, { role: 'user', content: text }];
+        inputValue = '';
+        isLoading = true;
+        expand();
+
+        try {
+            // Send exactly the format the backend expects
+            const response = await fetch('http://localhost:8000/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    messages: messages.map(m => ({ role: m.role, content: m.content })),
+                    provider: 'deepseek'
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            messages = [...messages, { role: 'assistant', content: data.response }];
+        } catch (error) {
+            console.error('Failed to get AI response:', error);
+            messages = [...messages, { role: 'assistant', content: 'Sorry, I encountered an error. Is the backend running?' }];
+        } finally {
+            isLoading = false;
+        }
     }
 
     /** @param {MouseEvent} event */
@@ -57,10 +109,23 @@
     >
         {#if isExpanded}
             <!-- Expanded: History + Input -->
-            <div class="chat-history">
-                <div class="message system">
-                    <p>Assistant ready. Type below to ask for help.</p>
-                </div>
+            <div class="chat-history" bind:this={chatHistoryContainer}>
+                {#each messages as msg}
+                    <div class="message-wrapper {msg.role}">
+                        <div class="message {msg.role}">
+                            <p>{msg.content}</p>
+                        </div>
+                    </div>
+                {/each}
+                {#if isLoading}
+                    <div class="message-wrapper assistant">
+                        <div class="message assistant typing">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                    </div>
+                {/if}
             </div>
         {/if}
 
@@ -77,9 +142,16 @@
             <input
                 type="text"
                 placeholder="Ask the assistant..."
+                bind:value={inputValue}
                 onfocus={expand}
+                onkeydown={(e) => {
+                    if (e.key === 'Enter') {
+                        e.stopPropagation();
+                        sendMessage();
+                    }
+                }}
             />
-            <button class="send-btn" aria-label="Send">
+            <button class="send-btn" aria-label="Send" onclick={(e) => { e.stopPropagation(); sendMessage(); }} disabled={isLoading}>
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
@@ -171,15 +243,72 @@
         overflow-y: auto;
         background-color: #f9fafb;
         border-bottom: 1px solid #f3f4f6;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .message-wrapper {
+        display: flex;
+        width: 100%;
+    }
+
+    .message-wrapper.user {
+        justify-content: flex-end;
+    }
+
+    .message-wrapper.assistant {
+        justify-content: flex-start;
     }
 
     .message {
         padding: 0.5rem 0.75rem;
         border-radius: 0.5rem;
         font-size: 0.875rem;
-        color: #4b5563;
+        line-height: 1.4;
+        max-width: 85%;
+        word-wrap: break-word;
+    }
+
+    .message p {
+        margin: 0;
+        white-space: pre-wrap;
+    }
+
+    .message.user {
+        background-color: #3b82f6;
+        color: white;
+        border-bottom-right-radius: 0.125rem;
+    }
+
+    .message.assistant {
         background-color: #e5e7eb;
-        display: inline-block;
+        color: #1f2937;
+        border-bottom-left-radius: 0.125rem;
+    }
+
+    .message.typing {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        height: 24px;
+        padding: 0.5rem 1rem;
+    }
+
+    .typing .dot {
+        width: 6px;
+        height: 6px;
+        background-color: #6b7280;
+        border-radius: 50%;
+        animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    .typing .dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing .dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bounce {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
     }
 
     .input-row {
@@ -220,7 +349,12 @@
         margin-right: 0.25rem;
     }
 
-    .send-btn:hover {
+    .send-btn:hover:not(:disabled) {
         background-color: #2563eb;
+    }
+
+    .send-btn:disabled {
+        background-color: #9ca3af;
+        cursor: not-allowed;
     }
 </style>
