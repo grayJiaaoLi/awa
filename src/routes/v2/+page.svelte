@@ -37,28 +37,13 @@
         isLoading = true;
 
         try {
-            const response = await fetch("http://localhost:8000/api/chat", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    messages: messages.map((m) => ({
-                        role: m.role,
-                        content: m.content,
-                    })),
-                    provider: "deepseek",
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`Error: ${response.status}`);
-            }
-
-            const data = await response.json();
+            // Fake delay to simulate network request
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const dummyResponse = "This is a simulated AI response. Since this is a static demo, there is no real backend connection.";
             messages = [
                 ...messages,
-                { role: "assistant", content: data.response },
+                { role: "assistant", content: dummyResponse },
             ];
         } catch (error) {
             console.error("Failed to get AI response:", error);

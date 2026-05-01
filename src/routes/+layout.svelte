@@ -46,13 +46,4 @@
 		width: 100%;
 		padding-bottom: 2rem;
 	}
-
-	footer {
-		background-color: white;
-		border-top: 1px solid #e5e7eb;
-		padding: 1.5rem 0;
-		color: #6b7280;
-		font-size: 0.875rem;
-		text-align: center;
-	}
 </style>
